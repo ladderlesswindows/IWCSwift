@@ -75,6 +75,7 @@ struct JobDetailView: View {
                     baseWindows: baseWindows,
                     freeInterior: freeInterior,
                     onsiteAdded: onsiteAdded,
+                    onsiteInteriorAdded: onsiteInteriorAdded,
                     arrivalScreens: $arrivalScreens,
                     arrivalConfirmed: $arrivalConfirmed,
                     screenHandlingChosen: $screenHandlingChosen,
@@ -94,6 +95,7 @@ struct JobDetailView: View {
                             booking: booking,
                             freeInterior: freeInterior,
                             onsiteAdded: onsiteAdded,
+                            onsiteInteriorAdded: onsiteInteriorAdded,
                             screenCount: arrivalScreens,
                             onsiteScreensAdded: onsiteScreensAdded,
                             recurringAccepted: recurringAccepted,
@@ -205,47 +207,37 @@ struct JobDetailView: View {
                                 baseWindows: baseWindows,
                                 freeInterior: freeInterior,
                                 prebookedWindowsBase: nextVisitWindows,
-                                arrivalScreensBase: arrivalScreens
+                                arrivalScreensBase: arrivalScreens,
+                                showReset: notifyPressed,
+                                onReset: {
+                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.65)) {
+                                        onsiteAdded = 0
+                                        onsiteInteriorAdded = 0
+                                        onsiteScreensAdded = 0
+                                        tookScreenLesson = false
+                                    }
+                                }
                             )
                             .frame(maxWidth: .infinity)
 
                             // CTA column — square card, same shell as sibling panels
                             Group {
                                 if notifyPressed {
-                                    VStack(spacing: 0) {
-                                        NavigationLink(value: "complete") {
-                                            VStack(spacing: 10) {
-                                                Spacer()
-                                                Image(systemName: "checkmark.circle.fill")
-                                                    .font(.system(size: 30, weight: .bold))
-                                                    .foregroundColor(.white)
-                                                    .shadow(color: .black.opacity(0.3), radius: 4)
-                                                Text("Lock\nIt In")
-                                                    .font(.system(size: 17, weight: .black))
-                                                    .foregroundColor(.white)
-                                                    .shadow(color: .black.opacity(0.3), radius: 4)
-                                                    .multilineTextAlignment(.center)
-                                                Spacer()
-                                            }
-                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                    NavigationLink(value: "complete") {
+                                        VStack(spacing: 10) {
+                                            Spacer()
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .font(.system(size: 30, weight: .bold))
+                                                .foregroundColor(.white)
+                                                .shadow(color: .black.opacity(0.3), radius: 4)
+                                            Text("Lock\nIt In")
+                                                .font(.system(size: 17, weight: .black))
+                                                .foregroundColor(.white)
+                                                .shadow(color: .black.opacity(0.3), radius: 4)
+                                                .multilineTextAlignment(.center)
+                                            Spacer()
                                         }
-                                        Button {
-                                            withAnimation(.spring(response: 0.4, dampingFraction: 0.65)) {
-                                                onsiteAdded = 0
-                                                onsiteInteriorAdded = 0
-                                                onsiteScreensAdded = 0
-                                                tookScreenLesson = false
-                                                notifyPressed = false
-                                                serviceSummaryMinimized = false
-                                            }
-                                        } label: {
-                                            Text("Reset")
-                                                .font(.system(size: 13))
-                                                .foregroundColor(.white.opacity(0.55))
-                                                .frame(maxWidth: .infinity)
-                                                .padding(.vertical, 10)
-                                        }
-                                        .buttonStyle(.plain)
+                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                                     }
                                     .background(
                                         ZStack {
@@ -637,6 +629,7 @@ struct WindowAnimationPanel: View {
     let baseWindows: Int
     let freeInterior: Int
     let onsiteAdded: Int
+    var onsiteInteriorAdded: Int = 0
     @Binding var arrivalScreens: Int
     @Binding var arrivalConfirmed: Bool
     @Binding var screenHandlingChosen: Bool
@@ -644,7 +637,7 @@ struct WindowAnimationPanel: View {
     var isMinimized: Bool = false
     var onTapBar: () -> Void = {}
 
-    private var totalWindows: Int { baseWindows + freeInterior + onsiteAdded }
+    private var totalWindows: Int { baseWindows + freeInterior + onsiteAdded + onsiteInteriorAdded }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -865,6 +858,7 @@ struct ServiceSummaryPanel: View {
     let booking: Booking
     let freeInterior: Int
     let onsiteAdded: Int
+    var onsiteInteriorAdded: Int = 0
     let screenCount: Int
     var onsiteScreensAdded: Int = 0
     let recurringAccepted: Bool
@@ -874,7 +868,7 @@ struct ServiceSummaryPanel: View {
 
     private var baseWindows: Int   { booking.window_count ?? 0 }
     private var baseTotal: Double  { booking.total_price ?? 0 }
-    private var todayDue: Double   { Double(onsiteAdded) * 12.50 + Double(onsiteScreensAdded) * 2.0 }
+    private var todayDue: Double   { Double(onsiteAdded) * 12.50 + Double(onsiteInteriorAdded) * 12.50 + Double(onsiteScreensAdded) * 2.0 }
 
     var body: some View {
         if isMinimized { minimizedBar } else { expandedBody }
@@ -936,7 +930,10 @@ struct ServiceSummaryPanel: View {
                 DocRow(label: "ORDERED", value: "\(baseWindows) ext · prepaid $\(String(format: "%.2f", baseTotal))")
                 DocRow(label: "COMPLIMENTARY", value: "\(freeInterior) interior window free", valueColor: Color(hex: "34d399"))
                 if onsiteAdded > 0 {
-                    DocRow(label: "ON-SITE ADDED", value: "\(onsiteAdded) × $12.50", valueColor: Color(hex: "7ED8EA"))
+                    DocRow(label: "ON-SITE EXT", value: "\(onsiteAdded) × $12.50", valueColor: Color(hex: "7ED8EA"))
+                }
+                if onsiteInteriorAdded > 0 {
+                    DocRow(label: "ON-SITE INT", value: "\(onsiteInteriorAdded) × $12.50", valueColor: Color(hex: "7ED8EA"))
                 }
                 if onsiteScreensAdded > 0 {
                     DocRow(label: "SCREEN HANDLING", value: "\(onsiteScreensAdded) × $2.00 = $\(String(format: "%.2f", Double(onsiteScreensAdded) * 2.0))", valueColor: Color(hex: "7ED8EA"))
@@ -1195,6 +1192,8 @@ struct AddOnPanel: View {
     let freeInterior: Int
     var prebookedWindowsBase: Int = 0
     var arrivalScreensBase: Int = 0
+    var showReset: Bool = false
+    var onReset: () -> Void = {}
 
     private var runningWindows: Int { prebookedWindowsBase + onsiteAdded + onsiteInteriorAdded }
     private var runningScreens: Int { arrivalScreensBase + onsiteScreensAdded }
@@ -1289,6 +1288,41 @@ struct AddOnPanel: View {
                     }
                 }
                 .frame(maxWidth: .infinity)
+
+                if showReset {
+                    Rectangle().fill(Color.white.opacity(0.15)).frame(width: 1, height: 75)
+
+                    Button(action: onReset) {
+                        VStack(spacing: 8) {
+                            Spacer()
+                            Image(systemName: "arrow.counterclockwise")
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundColor(.white)
+                                .shadow(color: .black.opacity(0.3), radius: 4)
+                            Text("Reset\nOffer")
+                                .font(.system(size: 15, weight: .black))
+                                .foregroundColor(.white)
+                                .shadow(color: .black.opacity(0.3), radius: 4)
+                                .multilineTextAlignment(.center)
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 75)
+                        .background(
+                            ZStack {
+                                LinearGradient(colors: [Color(hex: "0A3D5C").opacity(0.7), Color(hex: "1278A0").opacity(0.6)],
+                                               startPoint: .top, endPoint: .bottom)
+                                LinearGradient(colors: [.white.opacity(0.1), .clear],
+                                               startPoint: .top, endPoint: .center)
+                            }
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(Color(hex: "3AAAC4").opacity(0.5), lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                    .frame(maxWidth: .infinity)
+                    .transition(.scale(scale: 0.85).combined(with: .opacity))
+                }
             }
 
             } // end inner VStack

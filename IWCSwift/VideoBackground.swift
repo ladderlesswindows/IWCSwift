@@ -37,6 +37,9 @@ class VideoPlayerController: ObservableObject {
     @Published var isMuted = true
 
     private init() {
+        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback, options: .mixWithOthers)
+        try? AVAudioSession.sharedInstance().setActive(true)
+
         guard let url = Bundle.main.url(forResource: "bgvid", withExtension: "mp4") else {
             player = AVPlayer()
             return
