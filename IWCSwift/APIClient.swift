@@ -105,6 +105,28 @@ class APIClient {
         return try JSONDecoder().decode(Res.self, from: data).service_date
     }
 
+    struct CheckInStatusResponse: Decodable {
+        struct Row: Decodable { let id: String; let status: String; let tech_name: String? }
+        let pending: Row?
+        let confirmed: Row?
+    }
+
+    static func pollCheckIn(password: String, bookingId: String) async throws -> CheckInStatusResponse {
+        let encoded = bookingId.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? bookingId
+        var req = URLRequest(url: URL(string: "\(base)/api/tech/checkin?booking_id=\(encoded)")!)
+        headers(password: password).forEach { req.setValue($1, forHTTPHeaderField: $0) }
+        let (data, _) = try await URLSession.shared.data(for: req)
+        return try JSONDecoder().decode(CheckInStatusResponse.self, from: data)
+    }
+
+    static func confirmCheckIn(password: String, id: String) async throws {
+        var req = URLRequest(url: URL(string: "\(base)/api/tech/checkin")!)
+        req.httpMethod = "PATCH"
+        headers(password: password).forEach { req.setValue($1, forHTTPHeaderField: $0) }
+        req.httpBody = try JSONSerialization.data(withJSONObject: ["id": id])
+        _ = try await URLSession.shared.data(for: req)
+    }
+
     static func sendTechAlert(
         password: String,
         bookingId: String,

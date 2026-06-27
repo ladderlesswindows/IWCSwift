@@ -9,6 +9,9 @@ struct JobDetailView: View {
     @EnvironmentObject private var auth: AuthManager
     @Environment(\.dismiss) private var dismiss
 
+    @State private var pendingCheckInId: String? = nil
+    @State private var checkInConfirmed = false
+    @State private var checkInPollingTask: Task<Void, Never>? = nil
     @State private var arrivalConfirmed = false
     @State private var showBackConfirm = false
     @State private var screenHandlingChosen = false
@@ -538,6 +541,85 @@ struct JobDetailView: View {
                     nextVisitPrice: nextVisitOffer
                 )
             }
+        }
+        .task { startCheckInPolling() }
+        .onDisappear { checkInPollingTask?.cancel() }
+        .overlay(alignment: .top) {
+            if let _ = pendingCheckInId, !checkInConfirmed {
+                checkInBanner
+                    .padding(.top, 8)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .animation(.spring(response: 0.45, dampingFraction: 0.75), value: pendingCheckInId)
+                    .zIndex(100)
+            }
+        }
+    }
+
+    // MARK: - Check-In Polling
+
+    private func startCheckInPolling() {
+        checkInPollingTask?.cancel()
+        checkInPollingTask = Task {
+            while !Task.isCancelled && !checkInConfirmed {
+                try? await Task.sleep(nanoseconds: 4_000_000_000)
+                guard !Task.isCancelled else { return }
+                if let status = try? await APIClient.pollCheckIn(password: password, bookingId: booking.id) {
+                    await MainActor.run {
+                        withAnimation {
+                            if let pending = status.pending, pendingCheckInId == nil {
+                                pendingCheckInId = pending.id
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var checkInBanner: some View {
+        if let id = pendingCheckInId {
+            HStack(spacing: 12) {
+                Image(systemName: "iphone.radiowaves.left.and.right")
+                    .font(.system(size: 18))
+                    .foregroundColor(Color(hex: "3AAAC4"))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Tech is on site")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.white)
+                    Text("Confirm their arrival to begin the session")
+                        .font(.system(size: 11))
+                        .foregroundColor(Color.white.opacity(0.5))
+                }
+                Spacer()
+                Button {
+                    Task {
+                        try? await APIClient.confirmCheckIn(password: password, id: id)
+                        await MainActor.run {
+                            withAnimation {
+                                checkInConfirmed = true
+                                pendingCheckInId = nil
+                                checkInPollingTask?.cancel()
+                            }
+                        }
+                    }
+                } label: {
+                    Text("Confirm")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(Color(hex: "04101C"))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(Color(hex: "34D399"))
+                        .clipShape(Capsule())
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(Color(hex: "071F10").opacity(0.97))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: "34D399").opacity(0.4), lineWidth: 1))
+            .padding(.horizontal, 16)
+            .shadow(color: Color.black.opacity(0.4), radius: 12, y: 4)
         }
     }
 }
