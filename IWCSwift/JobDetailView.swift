@@ -1254,6 +1254,7 @@ struct AddOnPanel: View {
                         Text("\(freeInterior) free included")
                             .font(.system(size: 12))
                             .foregroundColor(Color(hex: "34d399"))
+                            .textOutline()
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -1285,9 +1286,11 @@ struct AddOnPanel: View {
                                     Text("Take lesson")
                                         .font(.system(size: 13, weight: .semibold))
                                         .foregroundColor(tookScreenLesson ? Color(hex: "34d399") : .white)
+                                        .textOutline()
                                     Text("$1 credit · no future fee")
                                         .font(.system(size: 11))
                                         .foregroundColor(Color(hex: "7ED8EA"))
+                                        .textOutline()
                                 }
                             }
                         }
@@ -1310,7 +1313,7 @@ struct AddOnPanel: View {
                             Text("Reset\nOffer")
                                 .font(.system(size: 15, weight: .black))
                                 .foregroundColor(.white)
-                                .shadow(color: .black.opacity(0.3), radius: 4)
+                                .textOutline()
                                 .multilineTextAlignment(.center)
                             Spacer()
                         }
@@ -1336,8 +1339,6 @@ struct AddOnPanel: View {
             } // end inner VStack
             .padding(14)
         }
-        .background(Color(hex: "34d399").opacity(0.06))
-        .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous)
             .stroke(Color.white.opacity(0.25), lineWidth: 1))
@@ -1357,10 +1358,11 @@ struct AddOnStepper: View {
             Text(label)
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundColor(.white)
-                .shadow(color: .black.opacity(0.3), radius: 4)
+                .textOutline()
             Text(sublabel)
                 .font(.system(size: 10))
                 .foregroundColor(Color(hex: "7ED8EA"))
+                .textOutline()
             HStack(spacing: 16) {
                 Button { if value > 0 { value -= 1 } } label: {
                     Image(systemName: "minus.circle.fill")
@@ -1371,7 +1373,7 @@ struct AddOnStepper: View {
                 Text("\(value)")
                     .font(.system(size: 26, weight: .black))
                     .foregroundColor(.white)
-                    .shadow(color: .black.opacity(0.3), radius: 4)
+                    .textOutline()
                     .frame(minWidth: 32)
                     .scaleEffect(value > 0 ? 1.04 : 1.0)
                     .animation(.spring(response: 0.25, dampingFraction: 0.5), value: value)
