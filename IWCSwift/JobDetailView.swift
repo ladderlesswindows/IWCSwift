@@ -215,6 +215,15 @@ struct JobDetailView: View {
                                         onsiteInteriorAdded = 0
                                         onsiteScreensAdded = 0
                                         tookScreenLesson = false
+                                        notifyPressed = false
+                                        continuePressed = false
+                                        screenHandlingChosen = false
+                                        arrivalConfirmed = false
+                                        serviceSummaryMinimized = false
+                                        companyHeaderExpanded = true
+                                        windowPanelExpanded = true
+                                        recurringAccepted = true
+                                        arrivalScreens = 0
                                     }
                                 }
                             )
