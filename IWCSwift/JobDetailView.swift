@@ -87,8 +87,7 @@ struct JobDetailView: View {
                     }
                 )
 
-                // Two columns: ServiceSummary slides in on handling choice, OfferPanel slides
-                // out on Continue — so ServiceSummary expands to fill width naturally
+                // Two columns: Today's Summary + Next Visit Offer (pre-continue) or Rewards (post-continue)
                 HStack(alignment: .top, spacing: 16) {
                     if screenHandlingChosen {
                         ServiceSummaryPanel(
@@ -117,6 +116,17 @@ struct JobDetailView: View {
                             freeInterior: freeInterior,
                             nextVisitOffer: nextVisitOffer,
                             nextVisitWindows: nextVisitWindows
+                        )
+                        .frame(maxWidth: .infinity)
+                        .transition(.move(edge: .trailing).combined(with: .opacity))
+                    } else {
+                        RewardsPanel(
+                            qualifyingAdds: qualifyingAdds,
+                            rewardCredit: rewardCredit,
+                            onsiteAdded: onsiteAdded,
+                            onsiteInteriorAdded: onsiteInteriorAdded,
+                            onsiteScreensAdded: onsiteScreensAdded,
+                            tookScreenLesson: tookScreenLesson
                         )
                         .frame(maxWidth: .infinity)
                         .transition(.move(edge: .trailing).combined(with: .opacity))
@@ -185,7 +195,7 @@ struct JobDetailView: View {
                             .transition(.move(edge: .top).combined(with: .opacity))
                         }
 
-                        // Add-on steppers (left) + rewards preview (right)
+                        // Add windows + CTA column
                         HStack(alignment: .top, spacing: 16) {
                             AddOnPanel(
                                 onsiteAdded: $onsiteAdded,
@@ -199,127 +209,120 @@ struct JobDetailView: View {
                             )
                             .frame(maxWidth: .infinity)
 
-                            RewardsPanel(
-                                qualifyingAdds: qualifyingAdds,
-                                rewardCredit: rewardCredit,
-                                onsiteAdded: onsiteAdded,
-                                onsiteInteriorAdded: onsiteInteriorAdded,
-                                onsiteScreensAdded: onsiteScreensAdded,
-                                tookScreenLesson: tookScreenLesson
-                            )
-                            .frame(maxWidth: .infinity)
-                        }
-
-                        // After Notify: Reset + Lock It In
-                        if notifyPressed {
-                            HStack(spacing: 12) {
-                                Button {
-                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.65)) {
-                                        onsiteAdded = 0
-                                        onsiteInteriorAdded = 0
-                                        onsiteScreensAdded = 0
-                                        tookScreenLesson = false
-                                        notifyPressed = false
-                                        serviceSummaryMinimized = false
+                            // CTA column — square card, same shell as sibling panels
+                            Group {
+                                if notifyPressed {
+                                    VStack(spacing: 0) {
+                                        NavigationLink(value: "complete") {
+                                            VStack(spacing: 10) {
+                                                Spacer()
+                                                Image(systemName: "checkmark.circle.fill")
+                                                    .font(.system(size: 30, weight: .bold))
+                                                    .foregroundColor(.white)
+                                                    .shadow(color: .black.opacity(0.3), radius: 4)
+                                                Text("Lock\nIt In")
+                                                    .font(.system(size: 17, weight: .black))
+                                                    .foregroundColor(.white)
+                                                    .shadow(color: .black.opacity(0.3), radius: 4)
+                                                    .multilineTextAlignment(.center)
+                                                Spacer()
+                                            }
+                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                        }
+                                        Button {
+                                            withAnimation(.spring(response: 0.4, dampingFraction: 0.65)) {
+                                                onsiteAdded = 0
+                                                onsiteInteriorAdded = 0
+                                                onsiteScreensAdded = 0
+                                                tookScreenLesson = false
+                                                notifyPressed = false
+                                                serviceSummaryMinimized = false
+                                            }
+                                        } label: {
+                                            Text("Reset")
+                                                .font(.system(size: 13))
+                                                .foregroundColor(.white.opacity(0.55))
+                                                .frame(maxWidth: .infinity)
+                                                .padding(.vertical, 10)
+                                        }
+                                        .buttonStyle(.plain)
                                     }
-                                } label: {
-                                    Text("Reset")
-                                        .font(.system(size: 15, weight: .semibold))
-                                        .foregroundColor(Color(hex: "7ED8EA"))
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 16)
-                                        .background(Color(hex: "3AAAC4").opacity(0.08))
-                                        .background(.ultraThinMaterial)
-                                        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-                                        .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous)
-                                            .stroke(Color.white.opacity(0.25), lineWidth: 1))
-                                }
-                                .buttonStyle(.plain)
-
-                                NavigationLink(value: "complete") {
-                                    HStack(spacing: 8) {
-                                        Text("Lock It In")
-                                            .font(.system(size: 15, weight: .bold))
-                                        Image(systemName: "checkmark")
-                                            .font(.system(size: 16, weight: .bold))
-                                    }
-                                    .foregroundColor(.white)
-                                    .shadow(color: .black.opacity(0.3), radius: 4)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 16)
                                     .background(
                                         ZStack {
-                                            LinearGradient(colors: [Color(hex: "059669"), Color(hex: "0D9488")],
-                                                           startPoint: .leading, endPoint: .trailing)
-                                            LinearGradient(colors: [.white.opacity(0.15), .clear],
+                                            LinearGradient(colors: [Color(hex: "059669").opacity(0.9), Color(hex: "0D9488").opacity(0.9)],
+                                                           startPoint: .top, endPoint: .bottom)
+                                            LinearGradient(colors: [.white.opacity(0.12), .clear],
                                                            startPoint: .top, endPoint: .center)
                                         }
                                     )
-                                    .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-                                    .shadow(color: Color(hex: "34d399").opacity(0.3), radius: 18, x: 0, y: 0)
-                                    .shadow(color: .white.opacity(0.05), radius: 1, x: 0, y: 1)
-                                }
-                            }
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                        } else if windowsAdded {
-                            Button {
-                                withAnimation(.spring(response: 0.5, dampingFraction: 0.65)) {
-                                    notifyPressed = true
-                                    serviceSummaryMinimized = true
-                                    windowPanelExpanded = false
-                                }
-                            } label: {
-                                HStack(spacing: 10) {
-                                    Text("Notify Technician of added windows")
-                                        .font(.system(size: 17, weight: .bold))
-                                    Image(systemName: "arrow.right")
-                                        .font(.system(size: 15, weight: .bold))
-                                }
-                                .foregroundColor(.white)
-                                .shadow(color: .black.opacity(0.3), radius: 4)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 18)
-                                .background(
-                                    ZStack {
-                                        LinearGradient(colors: [Color(hex: "0A3D5C"), Color(hex: "1278A0")],
-                                                       startPoint: .leading, endPoint: .trailing)
-                                        LinearGradient(colors: [.white.opacity(0.15), .clear],
-                                                       startPoint: .top, endPoint: .center)
+                                    .shadow(color: Color(hex: "34d399").opacity(0.35), radius: 18)
+                                } else if windowsAdded {
+                                    Button {
+                                        withAnimation(.spring(response: 0.5, dampingFraction: 0.65)) {
+                                            notifyPressed = true
+                                            serviceSummaryMinimized = true
+                                            windowPanelExpanded = false
+                                        }
+                                    } label: {
+                                        VStack(spacing: 10) {
+                                            Spacer()
+                                            Image(systemName: "bell.fill")
+                                                .font(.system(size: 28, weight: .bold))
+                                                .foregroundColor(.white)
+                                                .shadow(color: .black.opacity(0.3), radius: 4)
+                                            Text("Notify\nTech")
+                                                .font(.system(size: 17, weight: .black))
+                                                .foregroundColor(.white)
+                                                .shadow(color: .black.opacity(0.3), radius: 4)
+                                                .multilineTextAlignment(.center)
+                                            Spacer()
+                                        }
+                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                                     }
-                                )
-                                .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
-                                .overlay(RoundedRectangle(cornerRadius: 32, style: .continuous)
-                                    .stroke(Color(hex: "3AAAC4").opacity(0.4), lineWidth: 1))
-                                .shadow(color: Color(hex: "3AAAC4").opacity(0.35), radius: 20, x: 0, y: 0)
-                                .shadow(color: .white.opacity(0.05), radius: 1, x: 0, y: 1)
-                            }
-                            .buttonStyle(.plain)
-                        } else {
-                            NavigationLink(value: "complete") {
-                                HStack(spacing: 10) {
-                                    Text("Just the prebooked please")
-                                        .font(.system(size: 17, weight: .bold))
-                                    Image(systemName: "arrow.right")
-                                        .font(.system(size: 15, weight: .bold))
-                                }
-                                .foregroundColor(.white)
-                                .shadow(color: .black.opacity(0.3), radius: 4)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 18)
-                                .background(
-                                    ZStack {
-                                        LinearGradient(colors: [Color(hex: "0A3D5C"), Color(hex: "1278A0")],
-                                                       startPoint: .leading, endPoint: .trailing)
-                                        LinearGradient(colors: [.white.opacity(0.15), .clear],
-                                                       startPoint: .top, endPoint: .center)
+                                    .buttonStyle(.plain)
+                                    .background(
+                                        ZStack {
+                                            LinearGradient(colors: [Color(hex: "0A3D5C").opacity(0.9), Color(hex: "1278A0").opacity(0.9)],
+                                                           startPoint: .top, endPoint: .bottom)
+                                            LinearGradient(colors: [.white.opacity(0.12), .clear],
+                                                           startPoint: .top, endPoint: .center)
+                                        }
+                                    )
+                                    .shadow(color: Color(hex: "3AAAC4").opacity(0.35), radius: 18)
+                                } else {
+                                    NavigationLink(value: "complete") {
+                                        VStack(spacing: 10) {
+                                            Spacer()
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .font(.system(size: 28, weight: .bold))
+                                                .foregroundColor(.white)
+                                                .shadow(color: .black.opacity(0.3), radius: 4)
+                                            Text("Just Pre-\nbooked")
+                                                .font(.system(size: 17, weight: .black))
+                                                .foregroundColor(.white)
+                                                .shadow(color: .black.opacity(0.3), radius: 4)
+                                                .multilineTextAlignment(.center)
+                                            Spacer()
+                                        }
+                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                                     }
-                                )
-                                .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
-                                .overlay(RoundedRectangle(cornerRadius: 32, style: .continuous)
-                                    .stroke(Color(hex: "3AAAC4").opacity(0.4), lineWidth: 1))
-                                .shadow(color: Color(hex: "3AAAC4").opacity(0.35), radius: 20, x: 0, y: 0)
-                                .shadow(color: .white.opacity(0.05), radius: 1, x: 0, y: 1)
+                                    .background(
+                                        ZStack {
+                                            LinearGradient(colors: [Color(hex: "0A3D5C").opacity(0.9), Color(hex: "1278A0").opacity(0.9)],
+                                                           startPoint: .top, endPoint: .bottom)
+                                            LinearGradient(colors: [.white.opacity(0.12), .clear],
+                                                           startPoint: .top, endPoint: .center)
+                                        }
+                                    )
+                                    .shadow(color: Color(hex: "3AAAC4").opacity(0.35), radius: 18)
+                                }
                             }
+                            .frame(width: 110)
+                            .frame(maxHeight: .infinity)
+                            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                .stroke(Color.white.opacity(0.25), lineWidth: 1))
+                            .shadow(color: .white.opacity(0.05), radius: 1, x: 0, y: 1)
                         }
                     }
                     .padding(.horizontal, 20)
@@ -935,9 +938,6 @@ struct ServiceSummaryPanel: View {
                 if onsiteAdded > 0 {
                     DocRow(label: "ON-SITE ADDED", value: "\(onsiteAdded) × $12.50", valueColor: Color(hex: "7ED8EA"))
                 }
-                if screenCount > 0 {
-                    DocRow(label: "SCREENS", value: "\(screenCount) on preordered windows", valueColor: Color(hex: "7ED8EA"))
-                }
                 if onsiteScreensAdded > 0 {
                     DocRow(label: "SCREEN HANDLING", value: "\(onsiteScreensAdded) × $2.00 = $\(String(format: "%.2f", Double(onsiteScreensAdded) * 2.0))", valueColor: Color(hex: "7ED8EA"))
                 }
@@ -1108,12 +1108,14 @@ struct Thermometer: View {
     let avg: Double
     let retailRate: Double
 
-    private var fill: Double { min(1, max(0, avg / retailRate)) }
+    private let floorRate = 8.0
+    // Fill relative to $8 floor — $8 = empty (green), $20 = full (purple)
+    private var fill: Double { min(1, max(0, (avg - floorRate) / (retailRate - floorRate))) }
 
-    // Purple at top ($20 retail/bad), yellow mid, green bottom (great deal)
+    // Thresholds calibrated to 8–20 range
     private var levelColor: Color {
-        if fill > 0.72 { return Color(hex: "7C3AED") }
-        if fill > 0.38 { return Color(hex: "F59E0B") }
+        if fill > 0.58 { return Color(hex: "7C3AED") }  // above ~$15
+        if fill > 0.25 { return Color(hex: "F59E0B") }  // above ~$11
         return Color(hex: "059669")
     }
     private var savings: Int { Int(round((1 - avg / retailRate) * 100)) }
@@ -1123,19 +1125,17 @@ struct Thermometer: View {
             Text("WINDOW COST")
                 .font(.system(size: 10, weight: .bold))
                 .tracking(1.5)
-                .foregroundColor(Color(hex: "7ED8EA"))
+                .foregroundColor(.white.opacity(0.7))
                 .padding(.bottom, 8)
 
             HStack(alignment: .center, spacing: 10) {
-                // Vertical bar — fully self-contained
                 VStack(spacing: 4) {
                     Text("$\(Int(retailRate))")
                         .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                        .foregroundColor(Color(hex: "7C3AED").opacity(0.65))
+                        .foregroundColor(.white.opacity(0.6))
 
                     GeometryReader { geo in
                         ZStack(alignment: .bottom) {
-                            // Track — more transparent on glass
                             RoundedRectangle(cornerRadius: 5, style: .continuous)
                                 .fill(LinearGradient(
                                     colors: [Color(hex: "7C3AED").opacity(0.08), Color(hex: "F59E0B").opacity(0.06), Color(hex: "059669").opacity(0.08)],
@@ -1144,7 +1144,6 @@ struct Thermometer: View {
                                 .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous)
                                     .stroke(Color.white.opacity(0.25), lineWidth: 1))
 
-                            // Fill — vibrant gradient from bottom
                             RoundedRectangle(cornerRadius: 5, style: .continuous)
                                 .fill(LinearGradient(
                                     colors: [Color(hex: "7C3AED"), Color(hex: "F59E0B"), Color(hex: "059669")],
@@ -1156,25 +1155,21 @@ struct Thermometer: View {
                         .frame(width: 12)
                     }
                     .frame(width: 12, height: 80)
-
-                    Text("$0")
-                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                        .foregroundColor(Color(hex: "059669").opacity(0.65))
                 }
 
-                // Price readout — right of bar, no overflow
                 VStack(alignment: .leading, spacing: 3) {
                     Text("$\(String(format: "%.2f", avg))")
                         .font(.system(size: 22, weight: .black))
-                        .foregroundColor(levelColor)
+                        .foregroundColor(.white)
+                        .shadow(color: .black.opacity(0.3), radius: 4)
                         .animation(.spring(response: 0.5, dampingFraction: 0.8), value: avg)
                     Text("per window")
                         .font(.system(size: 13))
-                        .foregroundColor(Color(hex: "7ED8EA"))
+                        .foregroundColor(.white.opacity(0.7))
                     if savings > 0 {
                         Text("\(savings)% off retail")
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(levelColor.opacity(0.85))
+                            .foregroundColor(.white)
                     }
                 }
             }
@@ -1214,12 +1209,26 @@ struct AddOnPanel: View {
                     .foregroundColor(.white)
                     .shadow(color: .black.opacity(0.3), radius: 4)
                 Spacer()
-                Text("$12.50 EA")
-                    .font(.system(size: 11))
-                    .foregroundColor(.white.opacity(0.6))
+                HStack(spacing: 6) {
+                    Text("\(runningWindows)")
+                        .font(.system(size: 16, weight: .black))
+                        .foregroundColor(.white)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.65), value: runningWindows)
+                    Text("win")
+                        .font(.system(size: 11))
+                        .foregroundColor(.white.opacity(0.6))
+                    Rectangle().fill(Color.white.opacity(0.35)).frame(width: 1, height: 14)
+                    Text("\(runningScreens)")
+                        .font(.system(size: 16, weight: .black))
+                        .foregroundColor(.white)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.65), value: runningScreens)
+                    Text("scr")
+                        .font(.system(size: 11))
+                        .foregroundColor(.white.opacity(0.6))
+                }
             }
             .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .padding(.vertical, 10)
             .background(
                 LinearGradient(colors: [Color(hex: "059669").opacity(0.9), Color(hex: "0D9488").opacity(0.9)],
                                startPoint: .leading, endPoint: .trailing)
@@ -1282,33 +1291,6 @@ struct AddOnPanel: View {
                 .frame(maxWidth: .infinity)
             }
 
-            // Running totals
-            Divider().opacity(0.3)
-            HStack(spacing: 16) {
-                HStack(alignment: .firstTextBaseline, spacing: 5) {
-                    Text("\(runningWindows)")
-                        .font(.system(size: 22, weight: .black))
-                        .foregroundColor(.white)
-                        .shadow(color: .black.opacity(0.3), radius: 4)
-                        .animation(.spring(response: 0.3, dampingFraction: 0.65), value: runningWindows)
-                    Text("total windows")
-                        .font(.system(size: 10))
-                        .foregroundColor(Color(hex: "7ED8EA"))
-                }
-                Rectangle().fill(Color.white.opacity(0.15)).frame(width: 1, height: 22)
-                HStack(alignment: .firstTextBaseline, spacing: 5) {
-                    Text("\(runningScreens)")
-                        .font(.system(size: 22, weight: .black))
-                        .foregroundColor(.white)
-                        .shadow(color: .black.opacity(0.3), radius: 4)
-                        .animation(.spring(response: 0.3, dampingFraction: 0.65), value: runningScreens)
-                    Text("total screens")
-                        .font(.system(size: 10))
-                        .foregroundColor(Color(hex: "7ED8EA"))
-                }
-                Spacer()
-            }
-            .padding(.top, 4)
             } // end inner VStack
             .padding(14)
         }
