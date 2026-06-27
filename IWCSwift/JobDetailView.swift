@@ -332,6 +332,18 @@ struct JobDetailView: View {
                                             serviceSummaryMinimized = true
                                             windowPanelExpanded = false
                                         }
+                                        Task {
+                                            try? await APIClient.sendTechAlert(
+                                                password: password,
+                                                bookingId: booking.id,
+                                                customerName: booking.displayName,
+                                                address: booking.address ?? "",
+                                                windowsAdded: onsiteAdded,
+                                                interiorsAdded: onsiteInteriorAdded,
+                                                screensAdded: onsiteScreensAdded,
+                                                technicianName: auth.currentEmployee?.name ?? ""
+                                            )
+                                        }
                                     } label: {
                                         VStack(spacing: 10) {
                                             Spacer()

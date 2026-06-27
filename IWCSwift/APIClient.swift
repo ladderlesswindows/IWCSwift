@@ -105,6 +105,31 @@ class APIClient {
         return try JSONDecoder().decode(Res.self, from: data).service_date
     }
 
+    static func sendTechAlert(
+        password: String,
+        bookingId: String,
+        customerName: String,
+        address: String,
+        windowsAdded: Int,
+        interiorsAdded: Int,
+        screensAdded: Int,
+        technicianName: String
+    ) async throws {
+        var req = URLRequest(url: URL(string: "\(base)/api/tech/notify")!)
+        req.httpMethod = "POST"
+        headers(password: password).forEach { req.setValue($1, forHTTPHeaderField: $0) }
+        req.httpBody = try JSONSerialization.data(withJSONObject: [
+            "booking_id":       bookingId,
+            "customer_name":    customerName,
+            "address":          address,
+            "windows_added":    windowsAdded,
+            "interiors_added":  interiorsAdded,
+            "screens_added":    screensAdded,
+            "technician_name":  technicianName,
+        ] as [String: Any])
+        _ = try await URLSession.shared.data(for: req)
+    }
+
     static func verifyPassword(_ password: String) async -> Bool {
         var req = URLRequest(url: URL(string: "\(base)/api/admin/bookings")!)
         headers(password: password).forEach { req.setValue($1, forHTTPHeaderField: $0) }
