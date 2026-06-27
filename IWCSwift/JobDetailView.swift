@@ -1606,30 +1606,94 @@ struct AddOnsEstimatePanel: View {
                                 .font(.system(size: 12, weight: .bold))
                                 .tracking(1.5)
                                 .foregroundColor(Color(hex: "34d399"))
+                                .textOutline()
                             Text("$\(String(format: "%.2f", updatedAvg))/win · adjust adds above · Lock It In to confirm")
                                 .font(.system(size: 12))
                                 .foregroundColor(Color(hex: "7ED8EA"))
+                                .textOutline()
                         }
                         Spacer()
                         Text("$\(String(format: "%.2f", updatedOffer))")
                             .font(.system(size: 32, weight: .black))
                             .foregroundColor(Color(hex: "34d399"))
+                            .textOutline()
                     }
                 }
                 .frame(maxWidth: .infinity)
 
-                Thermometer(avg: updatedAvg, retailRate: 20.0)
-                    .frame(width: 120)
+                MiniWindowGrid(count: updatedWindowCount)
+                    .frame(width: 110)
             }
             .padding(14)
         }
-        .background(Color(hex: "34d399").opacity(0.06))
-        .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous)
             .stroke(Color.white.opacity(0.25), lineWidth: 1))
         .shadow(color: Color(hex: "34d399").opacity(0.3), radius: 18, x: 0, y: 0)
         .shadow(color: .white.opacity(0.05), radius: 1, x: 0, y: 1)
+    }
+}
+
+// MARK: - Mini window grid (replaces thermometer in AddOnsEstimatePanel)
+
+struct MiniWindowIcon: View {
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                .fill(Color.white.opacity(0.06))
+            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                .stroke(Color(hex: "7EC8E3").opacity(0.65), lineWidth: 1)
+            // Horizontal pane divider
+            Rectangle()
+                .fill(Color(hex: "7EC8E3").opacity(0.3))
+                .frame(height: 1)
+            // Vertical pane divider
+            Rectangle()
+                .fill(Color(hex: "7EC8E3").opacity(0.3))
+                .frame(width: 1)
+        }
+        .frame(width: 18, height: 22)
+    }
+}
+
+struct MiniWindowGrid: View {
+    let count: Int
+    private let maxVisible = 9
+    private let cols = 3
+
+    private func opacity(for index: Int) -> Double {
+        guard count > maxVisible else { return 1.0 }
+        // Last 3 of the 9 visible fade out to hint at more
+        if index < 6 { return 1.0 }
+        let t = Double(index - 6) / 3.0
+        return max(0.12, 1.0 - t * 0.88)
+    }
+
+    var body: some View {
+        let visible = min(count, maxVisible)
+        VStack(alignment: .leading, spacing: 4) {
+            LazyVGrid(
+                columns: Array(repeating: GridItem(.fixed(18), spacing: 5), count: cols),
+                spacing: 5
+            ) {
+                ForEach(0..<visible, id: \.self) { i in
+                    MiniWindowIcon()
+                        .opacity(opacity(for: i))
+                        .animation(.easeOut(duration: 0.25).delay(Double(i) * 0.04), value: count)
+                }
+            }
+            if count > maxVisible {
+                Text("+\(count - maxVisible) more")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(Color(hex: "7ED8EA").opacity(0.55))
+                    .textOutline()
+            }
+            Text("\(count) win next visit")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(Color(hex: "34d399"))
+                .textOutline()
+                .padding(.top, 2)
+        }
     }
 }
 
