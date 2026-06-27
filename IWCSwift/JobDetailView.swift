@@ -433,7 +433,7 @@ struct CompanyHeader: View {
                     Text("Simple Window Cleaning")
                         .font(.system(size: 16, weight: .bold))
                         .foregroundColor(.white)
-                        .shadow(color: .black.opacity(0.3), radius: 4)
+                        .textOutline()
                 }
             }
             .buttonStyle(.plain)
@@ -452,10 +452,6 @@ struct CompanyHeader: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .background(.thinMaterial)
-        .clipShape(Capsule())
-        .overlay(Capsule().stroke(Color.white.opacity(0.25), lineWidth: 1))
-        .shadow(color: Color(hex: "3AAAC4").opacity(0.22), radius: 24, x: 0, y: 8)
         .padding(.horizontal, 20)
         .padding(.top, 12)
     }
