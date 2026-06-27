@@ -16,6 +16,7 @@ struct JobDetailView: View {
     @State private var notifyPressed = false
     @State private var serviceSummaryMinimized = false
     @State private var companyHeaderExpanded = true
+    @State private var companyAtBottom = false
     @State private var windowPanelExpanded = true
     @State private var recurringAccepted = true
     @State private var onsiteAdded = 0
@@ -57,18 +58,25 @@ struct JobDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 8) {
-                // Company header — always present, collapses to bar after handling choice
-                CompanyHeader(
-                    booking: booking,
-                    techName: auth.currentEmployee?.name ?? "Technician",
-                    isExpanded: companyHeaderExpanded,
-                    onTap: {
-                        withAnimation(.spring(response: 0.4, dampingFraction: 0.65)) {
-                            companyHeaderExpanded.toggle()
-                        }
-                    },
-                    onNameTap: { showBackConfirm = true }
-                )
+                // Company header — top position (opening page: always expanded, slides down on tap)
+                if !companyAtBottom || screenHandlingChosen {
+                    CompanyHeader(
+                        booking: booking,
+                        techName: auth.currentEmployee?.name ?? "Technician",
+                        isExpanded: screenHandlingChosen ? companyHeaderExpanded : true,
+                        onTap: {
+                            withAnimation(.spring(response: 0.5, dampingFraction: 0.72)) {
+                                if screenHandlingChosen {
+                                    companyHeaderExpanded.toggle()
+                                } else {
+                                    companyAtBottom = true
+                                }
+                            }
+                        },
+                        onNameTap: { showBackConfirm = true }
+                    )
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                }
 
                 // Preorder Review — collapses to bar after Continue
                 WindowAnimationPanel(
@@ -136,6 +144,22 @@ struct JobDetailView: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 20)
+
+                // Company header — bottom position (only on open page after tap)
+                if companyAtBottom && !screenHandlingChosen {
+                    CompanyHeader(
+                        booking: booking,
+                        techName: auth.currentEmployee?.name ?? "Technician",
+                        isExpanded: true,
+                        onTap: {
+                            withAnimation(.spring(response: 0.5, dampingFraction: 0.72)) {
+                                companyAtBottom = false
+                            }
+                        },
+                        onNameTap: { showBackConfirm = true }
+                    )
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
 
                 // Pre-book checkbox + Continue — between handling choice and add-windows step
                 if screenHandlingChosen && !continuePressed {
@@ -221,6 +245,7 @@ struct JobDetailView: View {
                                         arrivalConfirmed = false
                                         serviceSummaryMinimized = false
                                         companyHeaderExpanded = true
+                                        companyAtBottom = false
                                         windowPanelExpanded = true
                                         recurringAccepted = true
                                         arrivalScreens = 0
