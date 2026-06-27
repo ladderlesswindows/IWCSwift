@@ -373,9 +373,21 @@ struct JobDetailView: View {
     }
 }
 
+// MARK: - Text outline (Photoshop-style stroke via 4-direction zero-radius shadows)
+
+extension View {
+    func textOutline(_ color: Color = .black, strength: Double = 0.65) -> some View {
+        self
+            .shadow(color: color.opacity(strength), radius: 0, x: -1, y:  0)
+            .shadow(color: color.opacity(strength), radius: 0, x:  1, y:  0)
+            .shadow(color: color.opacity(strength), radius: 0, x:  0, y: -1)
+            .shadow(color: color.opacity(strength), radius: 0, x:  0, y:  1)
+            .shadow(color: color.opacity(strength * 0.5), radius: 3)
+    }
+}
+
 // MARK: - Company + Technician header
 
-// Single floating bubble: ocean stripe + company + tech + customer all in one card
 struct CompanyHeader: View {
     let booking: Booking
     let techName: String
@@ -474,15 +486,17 @@ struct CompanyHeader: View {
                         .font(.system(size: 11, weight: .bold))
                         .tracking(2.5)
                         .foregroundColor(Color(hex: "7ED8EA"))
+                        .textOutline()
                     Button(action: onNameTap) {
                         HStack(spacing: 6) {
                             Image(systemName: "chevron.left")
                                 .font(.system(size: 15, weight: .semibold))
                                 .foregroundColor(Color(hex: "7ED8EA"))
+                                .textOutline()
                             Text("Simple Window Cleaning")
                                 .font(.system(size: 17, weight: .bold))
                                 .foregroundColor(.white)
-                                .shadow(color: .black.opacity(0.3), radius: 4)
+                                .textOutline()
                         }
                     }
                     .buttonStyle(.plain)
@@ -490,6 +504,7 @@ struct CompanyHeader: View {
                         .font(.system(size: 11, weight: .semibold))
                         .tracking(1.5)
                         .foregroundColor(Color(hex: "7ED8EA").opacity(0.7))
+                        .textOutline()
                 }
 
                 Spacer()
@@ -528,17 +543,16 @@ struct CompanyHeader: View {
                         .font(.system(size: 11, weight: .bold))
                         .tracking(1.5)
                         .foregroundColor(Color(hex: "34d399"))
+                        .textOutline()
                     Text(docDate)
                         .font(.system(size: 15, weight: .bold))
                         .foregroundColor(.white)
-                        .shadow(color: .black.opacity(0.3), radius: 4)
+                        .textOutline()
                 }
             }
             .padding(.horizontal, 20)
             .padding(.top, 14)
             .padding(.bottom, 10)
-
-            Divider().opacity(0.3).padding(.horizontal, 20)
 
             // Row 2: customer info fields
             HStack(spacing: 0) {
@@ -555,13 +569,6 @@ struct CompanyHeader: View {
             .padding(.horizontal, 20)
             .padding(.vertical, 12)
         }
-        .background(Color(hex: "3AAAC4").opacity(0.06))
-        .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous)
-            .stroke(Color.white.opacity(0.25), lineWidth: 1))
-        .shadow(color: Color(hex: "3AAAC4").opacity(0.22), radius: 24, x: 0, y: 8)
-        .shadow(color: .white.opacity(0.05), radius: 1, x: 0, y: 1)
         .padding(.horizontal, 20)
         .padding(.top, 20)
     }
@@ -614,10 +621,11 @@ struct InfoField: View {
                 .font(.system(size: 11, weight: .bold))
                 .tracking(1.5)
                 .foregroundColor(Color(hex: "7ED8EA"))
+                .textOutline()
             Text(value)
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(.white)
-                .shadow(color: .black.opacity(0.3), radius: 4)
+                .textOutline()
                 .lineLimit(1)
         }
     }
