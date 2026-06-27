@@ -1041,7 +1041,7 @@ struct OfferPanel: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
             .background(
-                LinearGradient(colors: [Color(hex: "0A3D5C").opacity(0.9), Color(hex: "1278A0").opacity(0.9)],
+                LinearGradient(colors: [Color(hex: "059669").opacity(0.9), Color(hex: "0D9488").opacity(0.9)],
                                startPoint: .leading, endPoint: .trailing)
             )
 
@@ -1062,21 +1062,23 @@ struct OfferPanel: View {
                                     .font(.system(size: 12, weight: .bold))
                                     .tracking(1.5)
                                     .foregroundColor(.white)
-                                    .shadow(color: .black.opacity(0.3), radius: 4)
+                                    .textOutline()
                                 Text("Discounts + free window applied")
                                     .font(.system(size: 12))
                                     .foregroundColor(Color(hex: "7ED8EA"))
+                                    .textOutline()
                             }
                             Spacer()
                             Text("$\(String(format: "%.2f", nextVisitOffer))")
                                 .font(.system(size: 30, weight: .black))
                                 .foregroundColor(.white)
-                                .shadow(color: .black.opacity(0.3), radius: 4)
+                                .textOutline()
                         }
 
                         Text("$\(String(format: "%.2f", avgPerWindow)) avg/win · \(Int(round((1 - avgPerWindow / retailRate) * 100)))% below retail")
                             .font(.system(size: 13))
                             .foregroundColor(Color(hex: "34d399"))
+                            .textOutline()
                             .padding(.top, 4)
                     }
                 }
@@ -1084,12 +1086,10 @@ struct OfferPanel: View {
 
                 Spacer(minLength: 0)
         }
-        .background(Color(hex: "3AAAC4").opacity(0.06))
-        .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous)
             .stroke(Color.white.opacity(0.25), lineWidth: 1))
-        .shadow(color: Color(hex: "3AAAC4").opacity(0.22), radius: 24, x: 0, y: 8)
+        .shadow(color: Color(hex: "34d399").opacity(0.3), radius: 18, x: 0, y: 0)
         .shadow(color: .white.opacity(0.05), radius: 1, x: 0, y: 1)
     }
 }
@@ -1103,10 +1103,12 @@ struct OfferRow: View {
             Text(label)
                 .font(.system(size: 12))
                 .foregroundColor(Color(hex: "7ED8EA"))
+                .textOutline()
             Spacer()
             Text(value)
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundColor(valueColor)
+                .textOutline()
         }
         .padding(.vertical, 4)
     }
