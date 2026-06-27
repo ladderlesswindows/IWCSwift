@@ -83,6 +83,28 @@ class APIClient {
         }
     }
 
+    static func createPrebook(
+        password: String,
+        bookingId: String,
+        windowCount: Int,
+        totalPrice: Double
+    ) async throws -> String {
+        struct Res: Decodable { let id: String; let service_date: String }
+        var req = URLRequest(url: URL(string: "\(base)/api/admin/prebook")!)
+        req.httpMethod = "POST"
+        headers(password: password).forEach { req.setValue($1, forHTTPHeaderField: $0) }
+        req.httpBody = try JSONSerialization.data(withJSONObject: [
+            "booking_id":   bookingId,
+            "window_count": windowCount,
+            "total_price":  totalPrice,
+        ] as [String: Any])
+        let (data, response) = try await URLSession.shared.data(for: req)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+        return try JSONDecoder().decode(Res.self, from: data).service_date
+    }
+
     static func verifyPassword(_ password: String) async -> Bool {
         var req = URLRequest(url: URL(string: "\(base)/api/admin/bookings")!)
         headers(password: password).forEach { req.setValue($1, forHTTPHeaderField: $0) }

@@ -14,6 +14,7 @@ struct JobCompleteView: View {
     @State private var saving = false
     @State private var submitted = false
     @State private var errorMsg: String? = nil
+    @State private var prebookDate: String? = nil
 
     init(booking: Booking, password: String, technicianName: String, onsiteAdded: Int, onsiteInteriorAdded: Int, screenCount: Int, prebookChosen: Bool) {
         self.booking = booking
@@ -63,7 +64,7 @@ struct JobCompleteView: View {
     var body: some View {
         Group {
             if submitted {
-                SubmittedView(booking: booking)
+                SubmittedView(booking: booking, prebookDate: prebookDate)
                     .videoBackground()
             } else {
                 ScrollView {
@@ -230,6 +231,14 @@ struct JobCompleteView: View {
                 interiorAdded: onsiteInteriorAdded,
                 interiorTotal: Double(onsiteInteriorAdded) * onsiteRate
             )
+            if let date = try? await APIClient.createPrebook(
+                password: password,
+                bookingId: booking.id,
+                windowCount: totalWindows,
+                totalPrice: reviewNextVisit
+            ) {
+                await MainActor.run { prebookDate = date }
+            }
             await MainActor.run { submitted = true }
         } catch {
             await MainActor.run {
@@ -443,53 +452,110 @@ struct UpdatedOfferPanel: View {
 
 struct SubmittedView: View {
     let booking: Booking
+    let prebookDate: String?
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        VStack(spacing: 32) {
-            Spacer()
+        ScrollView {
+            VStack(spacing: 32) {
+                Spacer().frame(height: 60)
 
-            VStack(spacing: 12) {
-                Image(systemName: "checkmark.seal.fill")
-                    .font(.system(size: 64))
-                    .foregroundColor(Color(hex: "34d399"))
-                Text("Session Saved")
-                    .font(.system(size: 32, weight: .heavy))
-                    .foregroundColor(.white)
-                Text("Thank you, \(booking.displayName.split(separator: " ").first.map(String.init) ?? "")!")
-                    .font(.system(size: 18))
-                    .foregroundColor(.white.opacity(0.6))
+                VStack(spacing: 12) {
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.system(size: 64))
+                        .foregroundColor(Color(hex: "34d399"))
+                    Text("Session Saved")
+                        .font(.system(size: 32, weight: .heavy))
+                        .foregroundColor(.white)
+                    Text("Thank you, \(booking.displayName.split(separator: " ").first.map(String.init) ?? "")!")
+                        .font(.system(size: 18))
+                        .foregroundColor(.white.opacity(0.6))
+                }
+
+                if let date = prebookDate {
+                    PrebookAnnouncementCard(isoDate: date)
+                        .padding(.horizontal, 32)
+                }
+
+                VStack(spacing: 8) {
+                    Text("SIMPLE WINDOW CLEANING")
+                        .font(.system(size: 10, weight: .semibold))
+                        .tracking(4)
+                        .foregroundColor(.white.opacity(0.2))
+                    Text("Santa Cruz · Silicon Valley")
+                        .font(.system(size: 12))
+                        .foregroundColor(.white.opacity(0.15))
+                }
+
+                Button {
+                    UIApplication.shared.open(URL(string: "https://www.ladderlesswindows.com/commercial")!)
+                } label: {
+                    Text("Done · Book My Neighbor")
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 18)
+                        .background(Color.white.opacity(0.08))
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white.opacity(0.12)))
+                }
+                .padding(.horizontal, 40)
+                .padding(.bottom, 48)
             }
-
-            VStack(spacing: 8) {
-                Text("SIMPLE WINDOW CLEANING")
-                    .font(.system(size: 10, weight: .semibold))
-                    .tracking(4)
-                    .foregroundColor(.white.opacity(0.2))
-                Text("Santa Cruz · Silicon Valley")
-                    .font(.system(size: 12))
-                    .foregroundColor(.white.opacity(0.15))
-            }
-
-            Spacer()
-
-            Button {
-                // Pop all the way back to job selector
-                dismiss()
-                dismiss()
-            } label: {
-                Text("Back to Jobs")
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 18)
-                    .background(Color.white.opacity(0.08))
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white.opacity(0.12)))
-            }
-            .padding(.horizontal, 40)
-            .padding(.bottom, 48)
         }
+    }
+}
+
+// MARK: - Shared prebook announcement card
+
+struct PrebookAnnouncementCard: View {
+    let isoDate: String
+
+    private var displayDate: String {
+        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
+        guard let d = iso.date(from: isoDate) else { return isoDate }
+        let fmt = DateFormatter(); fmt.dateFormat = "MMMM d, yyyy"
+        return fmt.string(from: d)
+    }
+
+    var body: some View {
+        VStack(spacing: 14) {
+            HStack(spacing: 10) {
+                Image(systemName: "calendar.badge.checkmark")
+                    .font(.system(size: 20))
+                    .foregroundColor(Color(hex: "3AAAC4"))
+                Text("SPOT RESERVED")
+                    .font(.system(size: 10, weight: .bold))
+                    .tracking(3)
+                    .foregroundColor(Color(hex: "3AAAC4"))
+            }
+
+            Text("A spot has been saved in exactly 1 year to utilize these rewards.")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(.white)
+                .multilineTextAlignment(.center)
+
+            Text(displayDate)
+                .font(.system(size: 26, weight: .heavy))
+                .foregroundColor(Color(hex: "7ED8EA"))
+
+            VStack(spacing: 5) {
+                Text("We'll send reminders before this date.")
+                    .font(.system(size: 12))
+                    .foregroundColor(.white.opacity(0.5))
+                Text("Confirm or move — no obligation.")
+                    .font(.system(size: 12))
+                    .foregroundColor(.white.opacity(0.5))
+                Text("Auto-cancels without a confirm.")
+                    .font(.system(size: 11))
+                    .foregroundColor(.white.opacity(0.3))
+            }
+            .multilineTextAlignment(.center)
+        }
+        .padding(22)
+        .background(Color(hex: "0A2740").opacity(0.8))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(hex: "3AAAC4").opacity(0.35), lineWidth: 1.5))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 }
 

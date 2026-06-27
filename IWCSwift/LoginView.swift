@@ -14,7 +14,6 @@ struct LoginView: View {
 
     var body: some View {
         ZStack {
-            // Beach video fills the screen
             VideoBackground(player: VideoPlayerController.shared.player)
                 .ignoresSafeArea()
                 .overlay(Color.black.opacity(0.45).ignoresSafeArea())
@@ -22,7 +21,6 @@ struct LoginView: View {
             VStack(spacing: 0) {
                 Spacer()
 
-                // Logo
                 Image("icon")
                     .resizable()
                     .scaledToFill()
@@ -43,23 +41,31 @@ struct LoginView: View {
                     .foregroundColor(.white)
                     .padding(.bottom, 36)
 
-                // Employee cards
-                HStack(spacing: 16) {
-                    ForEach(auth.employees) { emp in
-                        EmployeeCard(
-                            name: emp.name,
-                            isSelected: selected?.id == emp.id
-                        ) {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                selected = emp
-                                pin = ""
-                                errorFlash = false
+                // Employee scroll
+                if auth.loadingEmployees {
+                    ProgressView().tint(.white).padding(.bottom, 32)
+                } else {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 16) {
+                            ForEach(auth.employees) { emp in
+                                EmployeeCard(
+                                    name: emp.name,
+                                    photoUrl: emp.photoUrl,
+                                    isSelected: selected?.id == emp.id
+                                ) {
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                        selected = emp
+                                        pin = ""
+                                        errorFlash = false
+                                    }
+                                }
                             }
                         }
+                        .padding(.horizontal, 40)
                     }
+                    .frame(maxWidth: .infinity)
+                    .padding(.bottom, 32)
                 }
-                .frame(maxWidth: 480)
-                .padding(.bottom, 32)
 
                 // PIN dots
                 HStack(spacing: 18) {
@@ -93,21 +99,25 @@ struct LoginView: View {
             .padding(.horizontal, 40)
         }
         .ignoresSafeArea()
+        .task { await auth.loadEmployees() }
     }
 
     private func attemptLogin() {
         guard let emp = selected else { return }
-        if auth.login(employee: emp, pin: pin) {
-            // success — root switches away from this view
-        } else {
-            withAnimation(.default) { errorFlash = true }
-            withAnimation(.spring(response: 0.1, dampingFraction: 0.3).repeatCount(4, autoreverses: true)) {
-                shaking = true
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                shaking = false
-                errorFlash = false
-                pin = ""
+        Task {
+            let ok = await auth.login(employee: emp, pin: pin)
+            if ok {
+                // success — root switches away from this view
+            } else {
+                withAnimation(.default) { errorFlash = true }
+                withAnimation(.spring(response: 0.1, dampingFraction: 0.3).repeatCount(4, autoreverses: true)) {
+                    shaking = true
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    shaking = false
+                    errorFlash = false
+                    pin = ""
+                }
             }
         }
     }
@@ -117,6 +127,7 @@ struct LoginView: View {
 
 private struct EmployeeCard: View {
     let name: String
+    let photoUrl: String?
     let isSelected: Bool
     let onTap: () -> Void
 
@@ -131,11 +142,24 @@ private struct EmployeeCard: View {
                               : LinearGradient(colors: [Color.white.opacity(0.08), Color.white.opacity(0.04)],
                                                startPoint: .topLeading, endPoint: .bottomTrailing))
                         .frame(width: 64, height: 64)
-                        .overlay(Circle().stroke(isSelected ? Color(hex: "3AAAC4") : Color.white.opacity(0.12), lineWidth: 1.5))
 
-                    Text(String(name.prefix(1)))
-                        .font(.system(size: 26, weight: .heavy))
-                        .foregroundColor(isSelected ? .white : .white.opacity(0.55))
+                    if let urlStr = photoUrl, let url = URL(string: urlStr) {
+                        AsyncImage(url: url) { phase in
+                            if let img = phase.image {
+                                img.resizable().scaledToFill()
+                            } else {
+                                initialsView
+                            }
+                        }
+                        .frame(width: 64, height: 64)
+                        .clipShape(Circle())
+                    } else {
+                        initialsView
+                    }
+
+                    Circle()
+                        .stroke(isSelected ? Color(hex: "3AAAC4") : Color.white.opacity(0.12), lineWidth: 1.5)
+                        .frame(width: 64, height: 64)
                 }
 
                 Text(name)
@@ -156,6 +180,13 @@ private struct EmployeeCard: View {
         .buttonStyle(.plain)
         .scaleEffect(isSelected ? 1.03 : 1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
+    }
+
+    private var initialsView: some View {
+        let initials = name.split(separator: " ").compactMap(\.first).prefix(2).map(String.init).joined()
+        return Text(initials)
+            .font(.system(size: 22, weight: .heavy))
+            .foregroundColor(isSelected ? .white : .white.opacity(0.55))
     }
 }
 

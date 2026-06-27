@@ -23,7 +23,15 @@ struct JobDetailView: View {
     @State private var onsiteInteriorAdded = 0
     @State private var onsiteScreensAdded = 0
     @State private var tookScreenLesson = false
+    @State private var notifySnapAdded = 0
+    @State private var notifySnapInteriorAdded = 0
+    @State private var notifySnapScreensAdded = 0
+    @State private var notifySnapScreenLesson = false
     @State private var arrivalScreens = 0
+    @State private var showJustPrebookSheet = false
+    @State private var justPrebookDate: String? = nil
+    @State private var justPrebookCreating = false
+    @State private var justPrebookError: String? = nil
 
     private var windowsAdded: Bool { onsiteAdded > 0 || onsiteInteriorAdded > 0 || onsiteScreensAdded > 0 }
 
@@ -166,6 +174,47 @@ struct JobDetailView: View {
                     VStack(spacing: 12) {
                         PrebookRow(recurringAccepted: $recurringAccepted, nextVisitOffer: nextVisitOffer)
 
+                        if recurringAccepted {
+                            Button {
+                                Task {
+                                    justPrebookCreating = true
+                                    do {
+                                        let date = try await APIClient.createPrebook(
+                                            password: password,
+                                            bookingId: booking.id,
+                                            windowCount: nextVisitWindows,
+                                            totalPrice: nextVisitOffer
+                                        )
+                                        justPrebookDate = date
+                                        showJustPrebookSheet = true
+                                    } catch {
+                                        justPrebookError = error.localizedDescription
+                                    }
+                                    justPrebookCreating = false
+                                }
+                            } label: {
+                                HStack(spacing: 8) {
+                                    if justPrebookCreating {
+                                        ProgressView().tint(.white).scaleEffect(0.8)
+                                    } else {
+                                        Image(systemName: "calendar.badge.plus")
+                                            .font(.system(size: 14, weight: .semibold))
+                                    }
+                                    Text(justPrebookCreating ? "Saving spot…" : "Just the Prebooked Windows Please")
+                                        .font(.system(size: 15, weight: .semibold))
+                                }
+                                .foregroundColor(Color(hex: "3AAAC4"))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(Color(hex: "3AAAC4").opacity(0.1))
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(hex: "3AAAC4").opacity(0.35), lineWidth: 1))
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(justPrebookCreating)
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                        }
+
                         Button {
                             withAnimation(.spring(response: 0.5, dampingFraction: 0.65)) {
                                 continuePressed = true
@@ -235,10 +284,10 @@ struct JobDetailView: View {
                                 showReset: notifyPressed,
                                 onReset: {
                                     withAnimation(.spring(response: 0.4, dampingFraction: 0.65)) {
-                                        onsiteAdded = 0
-                                        onsiteInteriorAdded = 0
-                                        onsiteScreensAdded = 0
-                                        tookScreenLesson = false
+                                        onsiteAdded = notifySnapAdded
+                                        onsiteInteriorAdded = notifySnapInteriorAdded
+                                        onsiteScreensAdded = notifySnapScreensAdded
+                                        tookScreenLesson = notifySnapScreenLesson
                                     }
                                 }
                             )
@@ -275,6 +324,10 @@ struct JobDetailView: View {
                                 } else if windowsAdded {
                                     Button {
                                         withAnimation(.spring(response: 0.5, dampingFraction: 0.65)) {
+                                            notifySnapAdded = onsiteAdded
+                                            notifySnapInteriorAdded = onsiteInteriorAdded
+                                            notifySnapScreensAdded = onsiteScreensAdded
+                                            notifySnapScreenLesson = tookScreenLesson
                                             notifyPressed = true
                                             serviceSummaryMinimized = true
                                             windowPanelExpanded = false
@@ -306,14 +359,35 @@ struct JobDetailView: View {
                                     )
                                     .shadow(color: Color(hex: "3AAAC4").opacity(0.35), radius: 18)
                                 } else {
-                                    NavigationLink(value: "complete") {
+                                    Button {
+                                        Task {
+                                            justPrebookCreating = true
+                                            do {
+                                                let date = try await APIClient.createPrebook(
+                                                    password: password,
+                                                    bookingId: booking.id,
+                                                    windowCount: nextVisitWindows,
+                                                    totalPrice: nextVisitOffer
+                                                )
+                                                justPrebookDate = date
+                                                showJustPrebookSheet = true
+                                            } catch {
+                                                justPrebookError = error.localizedDescription
+                                            }
+                                            justPrebookCreating = false
+                                        }
+                                    } label: {
                                         VStack(spacing: 10) {
                                             Spacer()
-                                            Image(systemName: "checkmark.circle.fill")
-                                                .font(.system(size: 28, weight: .bold))
-                                                .foregroundColor(.white)
-                                                .shadow(color: .black.opacity(0.3), radius: 4)
-                                            Text("Just Pre-\nbooked")
+                                            if justPrebookCreating {
+                                                ProgressView().tint(.white)
+                                            } else {
+                                                Image(systemName: "calendar.badge.plus")
+                                                    .font(.system(size: 26, weight: .bold))
+                                                    .foregroundColor(.white)
+                                                    .shadow(color: .black.opacity(0.3), radius: 4)
+                                            }
+                                            Text(justPrebookCreating ? "Saving\nSpot…" : "Just Pre-\nbooked")
                                                 .font(.system(size: 17, weight: .black))
                                                 .foregroundColor(.white)
                                                 .shadow(color: .black.opacity(0.3), radius: 4)
@@ -322,6 +396,8 @@ struct JobDetailView: View {
                                         }
                                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                                     }
+                                    .buttonStyle(.plain)
+                                    .disabled(justPrebookCreating)
                                     .background(
                                         ZStack {
                                             LinearGradient(colors: [Color(hex: "0A3D5C").opacity(0.9), Color(hex: "1278A0").opacity(0.9)],
@@ -371,6 +447,63 @@ struct JobDetailView: View {
                 screenCount: onsiteScreensAdded,
                 prebookChosen: recurringAccepted
             )
+        }
+        .fullScreenCover(isPresented: $showJustPrebookSheet, onDismiss: { dismiss() }) {
+            ZStack {
+                VideoBackground(player: VideoPlayerController.shared.player)
+                    .ignoresSafeArea()
+                    .overlay(Color.black.opacity(0.55).ignoresSafeArea())
+
+                VStack(spacing: 32) {
+                    Spacer()
+
+                    Image(systemName: "calendar.badge.checkmark")
+                        .font(.system(size: 64))
+                        .foregroundColor(Color(hex: "3AAAC4"))
+
+                    if let date = justPrebookDate {
+                        PrebookAnnouncementCard(isoDate: date)
+                            .padding(.horizontal, 32)
+                    }
+
+                    VStack(spacing: 8) {
+                        Text("SIMPLE WINDOW CLEANING")
+                            .font(.system(size: 10, weight: .semibold))
+                            .tracking(4)
+                            .foregroundColor(.white.opacity(0.2))
+                        Text("Santa Cruz · Silicon Valley")
+                            .font(.system(size: 12))
+                            .foregroundColor(.white.opacity(0.15))
+                    }
+
+                    Spacer()
+
+                    Button {
+                        showJustPrebookSheet = false
+                        UIApplication.shared.open(URL(string: "https://www.ladderlesswindows.com/commercial")!)
+                    } label: {
+                        Text("Done · Book My Neighbor")
+                            .font(.system(size: 17, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 18)
+                            .background(Color.white.opacity(0.08))
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white.opacity(0.12)))
+                    }
+                    .padding(.horizontal, 40)
+                    .padding(.bottom, 48)
+                }
+            }
+            .ignoresSafeArea()
+        }
+        .alert("Couldn't save spot", isPresented: Binding(
+            get: { justPrebookError != nil },
+            set: { if !$0 { justPrebookError = nil } }
+        )) {
+            Button("OK", role: .cancel) { justPrebookError = nil }
+        } message: {
+            Text(justPrebookError ?? "")
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.65), value: screenHandlingChosen)
         .animation(.spring(response: 0.4, dampingFraction: 0.65), value: continuePressed)
