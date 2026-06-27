@@ -1,17 +1,21 @@
-//
-//  IWCSwiftApp.swift
-//  IWCSwift
-//
-//  Created by C Zilla on 6/26/26.
-//
-
 import SwiftUI
 
 @main
 struct IWCSwiftApp: App {
+    @StateObject private var auth = AuthManager.shared
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if !auth.isConfigured {
+                SetupView()
+                    .environmentObject(auth)
+            } else if auth.currentEmployee != nil {
+                JobSelectorView()
+                    .environmentObject(auth)
+            } else {
+                LoginView()
+                    .environmentObject(auth)
+            }
         }
     }
 }
