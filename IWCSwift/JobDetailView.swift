@@ -1440,17 +1440,19 @@ struct RewardsPanel: View {
                         .font(.system(size: 10))
                         .foregroundColor(Color(hex: "7ED8EA").opacity(0.7))
                         .fixedSize(horizontal: false, vertical: true)
+                        .textOutline()
                 } else {
                     if qualifyingExt > 0 {
                         HStack {
                             Text("\(qualifyingExt) exterior")
                                 .font(.system(size: 10))
                                 .foregroundColor(.white)
-                                .shadow(color: .black.opacity(0.3), radius: 4)
+                                .textOutline()
                             Spacer()
                             Text("$\(String(format: "%.2f", Double(qualifyingExt) * 6.25)) off")
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundColor(Color(hex: "34d399"))
+                                .textOutline()
                         }
                     }
                     if qualifyingInt > 0 {
@@ -1458,28 +1460,31 @@ struct RewardsPanel: View {
                             Text("\(qualifyingInt) interior")
                                 .font(.system(size: 10))
                                 .foregroundColor(.white)
-                                .shadow(color: .black.opacity(0.3), radius: 4)
+                                .textOutline()
                             Spacer()
                             Text("$\(String(format: "%.2f", Double(qualifyingInt) * 6.25)) off")
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundColor(Color(hex: "34d399"))
+                                .textOutline()
                         }
                     }
                     if overflowAdds > 0 {
                         Text("+\(overflowAdds) more · full price next visit")
                             .font(.system(size: 13))
                             .foregroundColor(.white.opacity(0.5))
+                            .textOutline()
                     }
                     if onsiteScreensAdded > 0 && tookScreenLesson {
                         HStack {
                             Text("\(onsiteScreensAdded) screen lesson")
                                 .font(.system(size: 10))
                                 .foregroundColor(.white)
-                                .shadow(color: .black.opacity(0.3), radius: 4)
+                                .textOutline()
                             Spacer()
                             Text("+$\(onsiteScreensAdded) credit")
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundColor(Color(hex: "34d399"))
+                                .textOutline()
                         }
                     }
                     if totalCredit > 0 {
@@ -1488,18 +1493,18 @@ struct RewardsPanel: View {
                             Text("total credit next visit")
                                 .font(.system(size: 13))
                                 .foregroundColor(Color(hex: "7ED8EA"))
+                                .textOutline()
                             Spacer()
                             Text("−$\(String(format: "%.2f", totalCredit))")
                                 .font(.system(size: 20, weight: .black))
                                 .foregroundColor(Color(hex: "34d399"))
+                                .textOutline()
                         }
                     }
                 }
             }
             .padding(14)
         }
-        .background(Color(hex: "34d399").opacity(0.06))
-        .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous)
             .stroke(Color.white.opacity(0.25), lineWidth: 1))
