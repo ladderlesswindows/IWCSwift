@@ -683,9 +683,9 @@ struct WindowAnimationPanel: View {
 
             HStack(alignment: .center, spacing: 0) {
                 // Window animation — live: purchased + added as base, free interiors as free
-                SlidingWindowRow(baseWindows: baseWindows + onsiteAdded, freeWindows: freeInterior)
+                SlidingWindowRow(baseWindows: baseWindows + onsiteAdded + onsiteInteriorAdded, freeWindows: freeInterior)
                     .frame(maxWidth: .infinity)
-                    .animation(.spring(response: 0.45, dampingFraction: 0.65), value: onsiteAdded)
+                    .animation(.spring(response: 0.45, dampingFraction: 0.65), value: onsiteAdded + onsiteInteriorAdded)
 
                 // Total windows
                 VStack(spacing: 4) {
