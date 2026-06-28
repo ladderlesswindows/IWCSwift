@@ -26,8 +26,8 @@ class AuthManager: ObservableObject {
     @Published var currentEmployee: Employee? = nil
     @Published var loadingEmployees = false
 
-    var apiPassword: String { UserDefaults.standard.string(forKey: "worker_password") ?? "" }
-    var isConfigured: Bool { !apiPassword.isEmpty }
+    var apiPassword: String { "shark" }
+    var isConfigured: Bool { true }
 
     private init() {}
 
