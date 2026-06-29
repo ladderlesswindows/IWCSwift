@@ -83,6 +83,14 @@ class APIClient {
         }
     }
 
+    static func moveBooking(password: String, bookingId: String, date: String, time: String) async throws {
+        var req = URLRequest(url: URL(string: "\(base)/api/admin/bookings")!)
+        req.httpMethod = "PATCH"
+        headers(password: password).forEach { req.setValue($1, forHTTPHeaderField: $0) }
+        req.httpBody = try JSONSerialization.data(withJSONObject: ["id": bookingId, "service_date": date, "service_time": time])
+        _ = try await URLSession.shared.data(for: req)
+    }
+
     static func fetchActiveCheckin(password: String) async throws -> Booking? {
         struct Res: Decodable {
             struct CheckinData: Decodable { let booking: Booking? }

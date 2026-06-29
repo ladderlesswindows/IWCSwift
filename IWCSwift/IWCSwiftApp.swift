@@ -17,7 +17,7 @@ struct IWCSwiftApp: App {
                 ZStack {
                     Group {
                         if appMode == .dispatch {
-                            DispatchView(onExit: {
+                            DispatchView(password: auth.apiPassword, onExit: {
                                 appMode = nil
                                 auth.logout()
                             })
