@@ -83,6 +83,17 @@ class APIClient {
         }
     }
 
+    static func fetchActiveCheckin(password: String) async throws -> Booking? {
+        struct Res: Decodable {
+            struct CheckinData: Decodable { let booking: Booking? }
+            let checkin: CheckinData?
+        }
+        var req = URLRequest(url: URL(string: "\(base)/api/tech/checkin/active")!)
+        headers(password: password).forEach { req.setValue($1, forHTTPHeaderField: $0) }
+        let (data, _) = try await URLSession.shared.data(for: req)
+        return try JSONDecoder().decode(Res.self, from: data).checkin?.booking
+    }
+
     static func createPrebook(
         password: String,
         bookingId: String,
@@ -150,6 +161,47 @@ class APIClient {
             "technician_name":  technicianName,
         ] as [String: Any])
         _ = try await URLSession.shared.data(for: req)
+    }
+
+    struct TechAlert: Decodable {
+        let id: String
+        let type: String?
+        let message: String?
+        let created_at: String
+    }
+    private struct TechAlertsResponse: Decodable { let alerts: [TechAlert] }
+
+    static func sendScreensAlert(
+        password: String,
+        bookingId: String,
+        techName: String,
+        confirmedCount: Int,
+        preorderCount: Int
+    ) async throws {
+        let message: String
+        if confirmedCount == 0 {
+            message = "No screens on preordered windows"
+        } else {
+            message = "Screens confirmed, \(confirmedCount)/\(preorderCount) need handling"
+        }
+        var req = URLRequest(url: URL(string: "\(base)/api/tech/alerts")!)
+        req.httpMethod = "POST"
+        headers(password: password).forEach { req.setValue($1, forHTTPHeaderField: $0) }
+        req.httpBody = try JSONSerialization.data(withJSONObject: [
+            "booking_id": bookingId,
+            "type": "screens_confirmed",
+            "message": message,
+            "technician_name": techName,
+        ] as [String: Any])
+        _ = try await URLSession.shared.data(for: req)
+    }
+
+    static func fetchJobStatusAlerts(password: String, bookingId: String) async throws -> [TechAlert] {
+        let encoded = bookingId.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? bookingId
+        var req = URLRequest(url: URL(string: "\(base)/api/tech/alerts?booking_id=\(encoded)")!)
+        headers(password: password).forEach { req.setValue($1, forHTTPHeaderField: $0) }
+        let (data, _) = try await URLSession.shared.data(for: req)
+        return try JSONDecoder().decode(TechAlertsResponse.self, from: data).alerts
     }
 
     static func verifyPassword(_ password: String) async -> Bool {
