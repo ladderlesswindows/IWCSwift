@@ -6,7 +6,6 @@ enum AppMode { case customer, dispatch }
 struct IWCSwiftApp: App {
     @StateObject private var auth = AuthManager.shared
     @State private var appMode: AppMode? = nil
-    @State private var checkedInBooking: Booking? = nil
 
     var body: some Scene {
         WindowGroup {
@@ -17,25 +16,13 @@ struct IWCSwiftApp: App {
             } else if auth.currentEmployee != nil {
                 ZStack {
                     Group {
-                        if let booking = checkedInBooking {
-                            // Auto-switched from dispatch on LTECH check-in
-                            JobSelectorView(autoSelectBooking: booking)
-                                .environmentObject(auth)
-                        } else if appMode == .dispatch {
-                            DispatchView(
-                                password: auth.apiPassword,
-                                onCheckIn: { booking in
-                                    withAnimation(.easeInOut(duration: 0.5)) {
-                                        checkedInBooking = booking
-                                    }
-                                },
-                                onExit: {
-                                    appMode = nil
-                                    auth.logout()
-                                }
-                            )
+                        if appMode == .dispatch {
+                            DispatchView(onExit: {
+                                appMode = nil
+                                auth.logout()
+                            })
                         } else if appMode == .customer {
-                            JobSelectorView(autoSelectBooking: nil)
+                            JobSelectorView()
                                 .environmentObject(auth)
                         } else {
                             ModePicker(employeeName: auth.currentEmployee?.name ?? "") { mode in
@@ -44,16 +31,13 @@ struct IWCSwiftApp: App {
                         }
                     }
 
-                    // Dispatch return button — visible on customer side, hidden in dispatch
-                    if appMode != .dispatch {
+                    // Faint grid button — lets the admin bail back to dispatch from customer side
+                    if appMode == .customer {
                         VStack {
                             HStack {
                                 Spacer()
                                 Button {
-                                    withAnimation(.easeInOut(duration: 0.35)) {
-                                        checkedInBooking = nil
-                                        appMode = .dispatch
-                                    }
+                                    withAnimation(.easeInOut(duration: 0.35)) { appMode = .dispatch }
                                 } label: {
                                     Image(systemName: "square.grid.2x2")
                                         .font(.system(size: 14, weight: .medium))
@@ -69,15 +53,11 @@ struct IWCSwiftApp: App {
                         }
                     }
                 }
-                .onAppear {
-                    // Reset on re-login
-                    if appMode == nil { checkedInBooking = nil }
-                }
 
             } else {
                 LoginView()
                     .environmentObject(auth)
-                    .onAppear { appMode = nil; checkedInBooking = nil }
+                    .onAppear { appMode = nil }
             }
         }
     }

@@ -1,8 +1,6 @@
 import SwiftUI
 
 struct JobSelectorView: View {
-    var autoSelectBooking: Booking? = nil
-
     @EnvironmentObject private var auth: AuthManager
     private var password: String { auth.apiPassword }
     @State private var bookings: [Booking] = []
@@ -125,12 +123,7 @@ struct JobSelectorView: View {
                 }
             }
         }
-        .task {
-            await load()
-            if let auto = autoSelectBooking {
-                selectedBooking = auto
-            }
-        }
+        .task { await load() }
     }
 
     private func load() async {

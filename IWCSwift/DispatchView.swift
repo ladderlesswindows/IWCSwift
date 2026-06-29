@@ -2,11 +2,7 @@ import SwiftUI
 import WebKit
 
 struct DispatchView: View {
-    let password: String
-    let onCheckIn: (Booking) -> Void
     let onExit: () -> Void
-
-    @State private var pollTask: Task<Void, Never>? = nil
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -28,22 +24,6 @@ struct DispatchView: View {
             }
             .padding(.top, 20)
             .padding(.leading, 20)
-        }
-        .onAppear { startPolling() }
-        .onDisappear { pollTask?.cancel() }
-    }
-
-    private func startPolling() {
-        pollTask?.cancel()
-        pollTask = Task {
-            while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 8_000_000_000)
-                guard !Task.isCancelled else { return }
-                if let booking = try? await APIClient.fetchActiveCheckin(password: password) {
-                    await MainActor.run { onCheckIn(booking) }
-                    return
-                }
-            }
         }
     }
 }
